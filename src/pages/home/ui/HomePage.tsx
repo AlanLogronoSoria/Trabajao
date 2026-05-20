@@ -1,23 +1,21 @@
+import { useState } from "react";
+import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+
 import { theme } from "@/core/styles/theme";
 import { useSession } from "@/features/session/model/useSession";
+import HomeScreen from "@/pages/home/ui/HomeScreen";
 import { Button } from "@/shared/ui/Button";
-import {
-    Alert,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    View
-} from "react-native";
- 
+
 export const HomePage = () => {
   const { user, signOut } = useSession();
- 
+  const [showCrud, setShowCrud] = useState(false);
+
   const handleSignOut = () => {
     Alert.alert(
       "Cerrar sesión",
       "¿Estás seguro de que deseas salir?",
       [
-        { text:"Cancelar", style:"cancel" },
+        { text: "Cancelar", style: "cancel" },
         {
           text: "Salir",
           style: "destructive",
@@ -26,18 +24,22 @@ export const HomePage = () => {
       ]
     );
   };
- 
+
+  // Renderizado condicional del CRUD con la función para regresar
+  if (showCrud) {
+    return <HomeScreen onBack={() => setShowCrud(false)} />;
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
- 
+      <ScrollView contentContainerStyle={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerIcon}>🎓</Text>
           <Text style={styles.headerTitle}>ESFOT</Text>
           <Text style={styles.headerSub}>Tecnología Superior en Desarrollo de Software</Text>
         </View>
- 
+
         {/* Mensaje principal */}
         <View style={styles.card}>
           <Text style={styles.welcomeIcon}>🚀</Text>
@@ -48,7 +50,7 @@ export const HomePage = () => {
           </Text>
           <Text style={styles.emailText}>{user?.email}</Text>
         </View>
- 
+
         {/* Logros */}
         <View style={styles.achievementsCard}>
           <Text style={styles.achievementsTitle}>Lo que implementaste:</Text>
@@ -59,45 +61,91 @@ export const HomePage = () => {
             "✅ Arquitectura Feature-Sliced Design",
             "✅ Expo Router con TypeScript",
             "✅ App web en Vercel para auth flows",
-          ].map(item => (
-            <Text key={item} style={styles.achievement}>{item}</Text>
+          ].map((item) => (
+            <Text key={item} style={styles.achievement}>
+              {item}
+            </Text>
           ))}
+
+          <View style={{ marginTop: 15 }}>
+            <Button
+              onPress={() => setShowCrud(true)}
+              label="Ver CRUD de Lugares"
+              variant="primary"
+            />
+          </View>
         </View>
- 
+
         {/* Botón de logout */}
         <Button
           onPress={handleSignOut}
           label="Cerrar sesión"
           variant="ghost"
         />
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
- 
+
 const styles = StyleSheet.create({
-  safe:              { flex:1, backgroundColor: theme.colors.bg },
-  container:         { flex:1, padding:24, gap:20 },
-  header:            { backgroundColor: theme.colors.primary, borderRadius:16,
-                       padding:24, alignItems:"center", ...theme.shadow.card },
-  headerIcon:        { fontSize:48, marginBottom:8 },
-  headerTitle:       { color:"#fff", fontSize:28, fontWeight:"800" },
-  headerSub:         { color:"rgba(255,255,255,0.75)", fontSize:12,
-                       textAlign:"center", marginTop:4 },
-  card:              { backgroundColor: theme.colors.card, borderRadius:16,
-                       padding:28, alignItems:"center", ...theme.shadow.card },
-  welcomeIcon:       { fontSize:56, marginBottom:16 },
-  welcomeTitle:      { fontSize:22, fontWeight:"800", color: theme.colors.primary,
-                       textAlign:"center", lineHeight:30, marginBottom:16 },
-  divider:           { width:"100%", height:1,
-                       backgroundColor: theme.colors.border, marginVertical:12 },
-  challengeText:     { fontSize:18, color: theme.colors.textMid,
-                       fontWeight:"600", marginBottom:8 },
-  emailText:         { fontSize:13, color: theme.colors.textMuted },
-  achievementsCard:  { backgroundColor: theme.colors.card, borderRadius:16,
-                       padding:20, gap:8, ...theme.shadow.card },
-  achievementsTitle: { fontSize:15, fontWeight:"700",
-                       color: theme.colors.primary, marginBottom:8 },
-  achievement:       { fontSize:14, color: theme.colors.textMid },
+  safe: { flex: 1, backgroundColor: theme.colors.bg },
+  container: { padding: 24, gap: 20 },
+  header: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 16,
+    padding: 24,
+    alignItems: "center",
+    ...theme.shadow.card,
+  },
+  headerIcon: { fontSize: 48, marginBottom: 8 },
+  headerTitle: { color: "#fff", fontSize: 28, fontWeight: "800" },
+  headerSub: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 4,
+  },
+  card: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 16,
+    padding: 28,
+    alignItems: "center",
+    ...theme.shadow.card,
+  },
+  welcomeIcon: { fontSize: 56, marginBottom: 16 },
+  welcomeTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: theme.colors.primary,
+    textAlign: "center",
+    lineHeight: 30,
+    marginBottom: 16,
+  },
+  divider: {
+    width: "100%",
+    height: 1,
+    backgroundColor: theme.colors.border,
+    marginVertical: 12,
+  },
+  challengeText: {
+    fontSize: 18,
+    color: theme.colors.textMid,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  emailText: { fontSize: 13, color: theme.colors.textMuted },
+  achievementsCard: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 16,
+    padding: 20,
+    gap: 8,
+    ...theme.shadow.card,
+  },
+  achievementsTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: theme.colors.primary,
+    marginBottom: 8,
+  },
+  achievement: { fontSize: 14, color: theme.colors.textMid },
 });
- 

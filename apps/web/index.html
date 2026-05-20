@@ -6,19 +6,15 @@
     <title>ESFOT Auth</title>
     
     <script>
-      // Se ejecuta inmediatamente al cargar la página
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
+      // Captura todo lo que devuelva Supabase
+      const search = window.location.search;
+      const hash = window.location.hash;
 
-      if (code) {
-        // ⚠️ CAMBIA LA IP POR LA TUYA DE EXPO GO
-        const expoIp = "192.168.100.70:8081"; // Ejemplo: 192.168.1.15:8081
-        
-        // Redirige al celular pasando el código intacto
-        window.location.replace(`exp://192.168.100.70:8081/--/home?code=${code}`);
+      // Si hay datos, redirige de inmediato a Expo Go
+      if (search || hash) {
+        window.location.replace(`exp://192.168.100.70:8081/--/home${search}${hash}`);
       }
     </script>
-
   </head>
   <body>
     <div id="root"></div>

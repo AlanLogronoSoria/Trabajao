@@ -1,41 +1,82 @@
 import { QueryProvider } from "@/core/providers/QueryProvider";
-import { useSession } from "@/features/session/model/useSession"; // Verifica que la ruta sea correcta según tu FSD
+import { useSession } from "@/features/session/model/useSession";
 import { router, Stack, useSegments } from "expo-router";
 import { useEffect } from "react";
+import { TamaguiProvider } from "tamagui";
+import tamaguiConfig from "../tamagui.config";
 
-// Componente interno que maneja la redirección basada en auth.
+// Nuevas importaciones para manejar los Deep Links y Supabase
+import { supabase } from "@/shared/api/supabase";
+import * as Linking from 'expo-linking';
+
+// Componente interno que maneja la redirección.
 function AuthGuard() {
   const { isAuthenticated, isLoading } = useSession();
-  const segments = useSegments(); // Obtiene la ruta actual (ej: ["(auth)", "login"])
-  // useSegments está fuertemente tipado por expo-router; castear a string[]
-  // evita errores de comparación con valores dinámicos como "(auth)".
-  const segmentsAny = segments as unknown as string[];
+  const segments = useSegments() as string[];
 
   useEffect(() => {
-    if (isLoading) return; // Esperar a que se cargue la sesión desde SecureStore
+    if (isLoading) return;
 
-    // Revisamos si el usuario ya está en el grupo de autenticación (login/register)
-    const inAuthGroup = segmentsAny[0] === "(auth)";
+    const inAuthGroup = segments[0] === "(auth)";
 
     if (!isAuthenticated && !inAuthGroup) {
-      // 1. Si NO está autenticado y NO está en el login -> Mandar al Login
-      router.replace("/(auth)/login" as any);
-    } else if (isAuthenticated && (inAuthGroup || segmentsAny.length === 0 || segmentsAny[0] === "index")) {
-      // 2. Si SÍ está autenticado y está en login o en la raíz -> Mandar al Home
-      // Nota: Asegúrate de que la ruta sea "/home" o "/(tabs)/home" según tu carpeta app
-      router.replace("/home" as any);
+      router.replace("/(auth)/login");
+    } else if (
+      isAuthenticated &&
+      (
+        inAuthGroup ||
+        segments.length === 0 ||
+        segments[0] === "index"
+      )
+    ) {
+      router.replace("/home");
     }
   }, [isAuthenticated, isLoading, segments]);
 
-  return null; 
+  return null;
 }
 
 export default function RootLayout() {
+  // 1. Hook para escuchar cuando la app se abre desde un link externo (Vercel)
+  const url = Linking.useURL();
+
+  useEffect(() => {
+  if (url) {
+    const parsedUrl = Linking.parse(url);
+    
+    // expo-linking usa únicamente queryParams
+    const code = parsedUrl.queryParams?.code;
+    
+    if (typeof code === 'string') {
+      const exchangeCode = async () => {
+        try {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+          console.log("¡Sesión de Google intercambiada y activada con éxito!");
+        } catch (err: any) {
+          console.error("Error al validar código de Google:", err.message);
+        }
+      };
+      
+      exchangeCode();
+    }
+  }
+}, [url]);
+
   return (
     <QueryProvider>
-      {/* El AuthGuard debe estar dentro del Provider para usar useSession */}
-      <AuthGuard />
-      <Stack screenOptions={{ headerShown: false }} />
+      <TamaguiProvider
+        config={tamaguiConfig}
+        defaultTheme="light"
+      >
+        <AuthGuard />
+
+        <Stack
+          screenOptions={{
+            headerShown: false,
+          }}
+        />
+      </TamaguiProvider>
     </QueryProvider>
   );
 }
