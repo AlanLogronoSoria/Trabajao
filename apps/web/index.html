@@ -4,6 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ESFOT Auth</title>
+    
+    <script>
+      // Se ejecuta inmediatamente al cargar la página
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+
+      if (code) {
+        // ⚠️ CAMBIA LA IP POR LA TUYA DE EXPO GO
+        const expoIp = "192.168.100.70:8081"; // Ejemplo: 192.168.1.15:8081
+        
+        // Redirige al celular pasando el código intacto
+        window.location.replace(`exp://192.168.100.70:8081/--/home?code=${code}`);
+      }
+    </script>
+
   </head>
   <body>
     <div id="root"></div>
