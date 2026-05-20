@@ -1,80 +1,232 @@
-// src/pages/home/ui/HomeScreen.tsx
-import { useCreatePlace, useDeletePlace, useGetPlaces, useUpdatePlace } from '@/features/places/api/usePlaces';
-import { router } from 'expo-router';
-import { useState } from 'react';
-import { Alert } from 'react-native';
-import { Button, Input, ScrollView, Spinner, Text, XStack, YStack } from 'tamagui';
+import { theme } from "@/core/styles/theme";
+import { Button } from "@/shared/ui/Button";
+import { Input } from "@/shared/ui/Input";
+import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
+import {
+  Alert,
+  FlatList,
+  Modal,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from "react-native";
+import { ManagePlaceCard } from "./components/ManagePlaceCard";
 
-// Añadimos onBack como prop
-export default function HomeScreen({ onBack }: { onBack?: () => void }) {
-  const [name, setName] = useState('');
+interface Place {
+  id: string;
+  name: string;
+  desc: string;
+}
+
+// Tipamos las propiedades que entran desde HomePage
+interface HomeScreenProps {
+  places: Place[];
+  setPlaces: React.Dispatch<React.SetStateAction<Place[]>>;
+  onBack: () => void;
+}
+
+export default function HomeScreen({ places, setPlaces, onBack }: HomeScreenProps) {
+  // --- ESTADOS LOCALES DE INTERFAZ (No rompen los datos al salir) ---
+  const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState('');
+  const [formName, setFormName] = useState("");
+  const [formDesc, setFormDesc] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: places, isLoading } = useGetPlaces();
-  const create = useCreatePlace();
-  const remove = useDeletePlace();
-  const update = useUpdatePlace();
-
-  const handleSave = async () => {
-    if (!name) return;
-    try {
-      await create.mutateAsync(name);
-      setName('');
-    } catch (e: any) { Alert.alert("Error", e.message); }
+  const openModal = (place?: Place) => {
+    if (place) {
+      setEditingId(place.id);
+      setFormName(place.name);
+      setFormDesc(place.desc);
+    } else {
+      setEditingId(null);
+      setFormName("");
+      setFormDesc("");
+    }
+    setModalVisible(true);
   };
 
-  const saveEdit = async (id: string) => {
-    await update.mutateAsync({ id, name: editName });
-    setEditingId(null);
+  // 💡 CREATE / UPDATE: Afecta directamente al estado persistido en el padre
+  const handleSave = async () => {
+    if (!formName.trim() || !formDesc.trim()) {
+      return Alert.alert("Campos requeridos", "Por favor llena todos los campos.");
+    }
+
+    setIsSubmitting(true);
+    try {
+      if (editingId) {
+        setPlaces(places.map(p => 
+          p.id === editingId ? { ...p, name: formName, desc: formDesc } : p
+        ));
+      } else {
+        const newPlace = { id: Date.now().toString(), name: formName, desc: formDesc };
+        setPlaces([newPlace, ...places]);
+      }
+      setModalVisible(false);
+    } catch (error) {
+      Alert.alert("Error", "No se pudo procesar la solicitud.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 💡 DELETE: Remueve el elemento del estado del padre
+  const handleDelete = (id: string) => {
+    Alert.alert(
+      "Confirmar Eliminación", 
+      "¿Estás seguro de que deseas eliminar este lugar del sistema?", 
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Eliminar", 
+          style: "destructive",
+          onPress: () => {
+            setPlaces(places.filter(p => p.id !== id));
+          }
+        }
+      ]
+    );
   };
 
   return (
-    <ScrollView padding="$4">
-      <YStack gap="$4">
-        {/* Botón para volver a la pantalla anterior (Bienvenida) */}
-        <Button theme="gray" onPress={onBack}>← Volver</Button>
-        
-        <Input placeholder="Nuevo lugar..." value={name} onChangeText={setName} />
-        <Button onPress={handleSave} disabled={create.isPending}>
-          {create.isPending ? <Spinner /> : "Guardar Lugar"}
-        </Button>
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+        </TouchableOpacity>
+        <View>
+          <Text style={styles.headerTitle}>Gestión de Lugares</Text>
+          <Text style={styles.headerSub}>{places.length} espacios activos</Text>
+        </View>
+      </View>
 
-        {/* Navegación al perfil corregida */}
-        <Button 
-            onPress={() => {
-                if (onBack) onBack(); // Limpiamos el estado del CRUD primero
-                router.push('../profile');
-            }} 
-            theme="blue"
-        >
-            Ir a mi Perfil
-        </Button>
+      {/* Lista Principal */}
+      {places.length === 0 ? (
+        <View style={styles.centerBox}>
+          <Text style={styles.emptyText}>No hay lugares registrados aún.</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={places}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          renderItem={({ item }) => (
+            <ManagePlaceCard 
+              title={item.name} 
+              desc={item.desc} 
+              onEdit={() => openModal(item)}
+              onDelete={() => handleDelete(item.id)}
+            />
+          )}
+        />
+      )}
 
-        {isLoading ? <Spinner size="large" /> : (
-          places?.map((item: any) => (
-            <YStack key={item.id} padding="$3" borderWidth={1} borderColor="$gray5" borderRadius="$4">
-              {editingId === item.id ? (
-                <YStack gap="$2">
-                  <Input value={editName} onChangeText={setEditName} />
-                  <XStack gap="$2">
-                    <Button flex={1} theme="green" onPress={() => saveEdit(item.id)}>Guardar</Button>
-                    <Button flex={1} theme="gray" onPress={() => setEditingId(null)}>Cancelar</Button>
-                  </XStack>
-                </YStack>
-              ) : (
-                <XStack justifyContent="space-between" alignItems="center">
-                  <Text>{item.name}</Text>
-                  <XStack gap="$2">
-                    <Button theme="blue" onPress={() => { setEditingId(item.id); setEditName(item.name); }}>Editar</Button>
-                    <Button theme="red" onPress={() => remove.mutate(item.id)}>X</Button>
-                  </XStack>
-                </XStack>
-              )}
-            </YStack>
-          ))
-        )}
-      </YStack>
-    </ScrollView>
+      {/* Botón Flotante */}
+      <TouchableOpacity style={styles.fab} onPress={() => openModal()}>
+        <Ionicons name="add" size={30} color="white" />
+      </TouchableOpacity>
+
+      {/* Modal Reutilizable */}
+      <Modal animationType="slide" transparent visible={modalVisible}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>
+              {editingId ? "Editar Lugar" : "Nuevo Lugar"}
+            </Text>
+            
+            <View style={{ gap: 16, marginBottom: 24 }}>
+              <Input 
+                label="Nombre del lugar" 
+                value={formName} 
+                onChangeText={setFormName} 
+                placeholder="Ej: Laboratorio 4" 
+              />
+              <Input 
+                label="Ubicación / Descripción" 
+                value={formDesc} 
+                onChangeText={setFormDesc} 
+                placeholder="Ej: Bloque B, Primer Piso" 
+              />
+            </View>
+
+            <View style={styles.modalActions}>
+              <Button 
+                label="Cancelar" 
+                variant="ghost" 
+                onPress={() => setModalVisible(false)} 
+                disabled={isSubmitting}
+              />
+              <View style={{ width: 12 }} />
+              <Button 
+                label={isSubmitting ? "Guardando..." : "Guardar"} 
+                onPress={handleSave} 
+                disabled={isSubmitting}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.colors.bg },
+  centerBox: { flex: 1, justifyContent: "center", alignItems: "center" },
+  emptyText: { color: theme.colors.textMuted, fontSize: 16 },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: theme.spacing.lg,
+    backgroundColor: theme.colors.card,
+    gap: 16,
+    ...theme.shadow.card,
+  },
+  backBtn: {
+    padding: 10,
+    backgroundColor: theme.colors.bg,
+    borderRadius: theme.radius.sm,
+  },
+  headerTitle: { fontSize: 22, fontWeight: "800", color: theme.colors.text },
+  headerSub: { fontSize: 13, color: theme.colors.textMuted },
+  listContent: { padding: theme.spacing.lg, paddingBottom: 100 },
+  fab: {
+    position: "absolute",
+    bottom: 30,
+    right: 30,
+    backgroundColor: theme.colors.primary,
+    width: 65,
+    height: 65,
+    borderRadius: 32.5,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 8,
+    shadowColor: theme.colors.primary,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modalCard: {
+    backgroundColor: theme.colors.card,
+    borderTopLeftRadius: theme.radius.xl,
+    borderTopRightRadius: theme.radius.xl,
+    padding: theme.spacing.xl,
+    ...theme.shadow.card,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: theme.colors.text,
+    marginBottom: 20,
+  },
+  modalActions: { flexDirection: "row", justifyContent: "flex-end" },
+});

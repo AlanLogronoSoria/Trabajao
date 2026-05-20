@@ -1,151 +1,102 @@
-import { useState } from "react";
-import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
-
 import { theme } from "@/core/styles/theme";
 import { useSession } from "@/features/session/model/useSession";
 import HomeScreen from "@/pages/home/ui/HomeScreen";
 import { Button } from "@/shared/ui/Button";
+import { PlaceCard } from "@/shared/ui/PlaceCard";
+import { useState } from "react";
+import { FlatList, SafeAreaView, StyleSheet, Text, View } from "react-native";
+
+// Definimos la estructura del objeto para evitar errores de TypeScript
+interface Place {
+  id: string;
+  name: string;
+  desc: string;
+}
 
 export const HomePage = () => {
   const { user, signOut } = useSession();
   const [showCrud, setShowCrud] = useState(false);
 
-  const handleSignOut = () => {
-    Alert.alert(
-      "Cerrar sesión",
-      "¿Estás seguro de que deseas salir?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Salir",
-          style: "destructive",
-          onPress: () => signOut(),
-        },
-      ]
-    );
-  };
+  // 💡 PERSISTENCIA: El estado vive aquí en el padre. No se destruye al alternar pantallas.
+  const [places, setPlaces] = useState<Place[]>([
+    { id: "1", name: "Laboratorios de Software", desc: "Bloque C, nivel 2." },
+    { id: "2", name: "Biblioteca Central", desc: "Zona de estudio y consulta." },
+    { id: "3", name: "Cafetería ESFOT", desc: "Área de recreación." },
+  ]);
 
-  // Renderizado condicional del CRUD con la función para regresar
+  // Si showCrud es true, inyectamos la lista y su modificador mediante Props
   if (showCrud) {
-    return <HomeScreen onBack={() => setShowCrud(false)} />;
+    return (
+      <HomeScreen 
+        places={places} 
+        setPlaces={setPlaces} 
+        onBack={() => setShowCrud(false)} 
+      />
+    );
   }
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerIcon}>🎓</Text>
-          <Text style={styles.headerTitle}>ESFOT</Text>
-          <Text style={styles.headerSub}>Tecnología Superior en Desarrollo de Software</Text>
-        </View>
+      {/* Cabecera */}
+      <View style={styles.header}>
+        <Text style={styles.greeting}>Bienvenido de nuevo</Text>
+        <Text style={styles.userEmail}>{user?.email}</Text>
+      </View>
 
-        {/* Mensaje principal */}
-        <View style={styles.card}>
-          <Text style={styles.welcomeIcon}>🚀</Text>
-          <Text style={styles.welcomeTitle}>¡Bienvenido, lo lograste,{" "}tecnólogo de la ESFOT!</Text>
-          <View style={styles.divider} />
-          <Text style={styles.challengeText}>
-            ¿No fue tan difícil... o sí? 😄
-          </Text>
-          <Text style={styles.emailText}>{user?.email}</Text>
-        </View>
+      {/* Lista de Lugares Dinámica */}
+      <FlatList
+        data={places}
+        contentContainerStyle={styles.list}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={<Text style={styles.sectionTitle}>Espacios del Campus</Text>}
+        renderItem={({ item }) => (
+          <PlaceCard 
+            title={item.name} 
+            description={item.desc} 
+            onPress={() => {}} 
+          />
+        )}
+      />
 
-        {/* Logros */}
-        <View style={styles.achievementsCard}>
-          <Text style={styles.achievementsTitle}>Lo que implementaste:</Text>
-          {[
-            "✅ Autenticación con Supabase Auth",
-            "✅ Tokens persistidos con SecureStore",
-            "✅ Estado de sesión con TanStack Query",
-            "✅ Arquitectura Feature-Sliced Design",
-            "✅ Expo Router con TypeScript",
-            "✅ App web en Vercel para auth flows",
-          ].map((item) => (
-            <Text key={item} style={styles.achievement}>
-              {item}
-            </Text>
-          ))}
-
-          <View style={{ marginTop: 15 }}>
-            <Button
-              onPress={() => setShowCrud(true)}
-              label="Ver CRUD de Lugares"
-              variant="primary"
-            />
-          </View>
-        </View>
-
-        {/* Botón de logout */}
-        <Button
-          onPress={handleSignOut}
-          label="Cerrar sesión"
-          variant="ghost"
+      {/* Panel de acciones fijo abajo */}
+      <View style={styles.footerContainer}>
+        <Button 
+          label="Gestionar Lugares (CRUD)" 
+          onPress={() => setShowCrud(true)} 
         />
-      </ScrollView>
+        <View style={{ height: 12 }} />
+        <Button 
+          label="Cerrar sesión" 
+          variant="ghost" 
+          onPress={signOut} 
+        />
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.bg },
-  container: { padding: 24, gap: 20 },
-  header: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 16,
-    padding: 24,
-    alignItems: "center",
-    ...theme.shadow.card,
-  },
-  headerIcon: { fontSize: 48, marginBottom: 8 },
-  headerTitle: { color: "#fff", fontSize: 28, fontWeight: "800" },
-  headerSub: {
-    color: "rgba(255,255,255,0.75)",
-    fontSize: 12,
-    textAlign: "center",
-    marginTop: 4,
-  },
-  card: {
+  header: { 
+    padding: theme.spacing.lg, 
     backgroundColor: theme.colors.card,
-    borderRadius: 16,
-    padding: 28,
-    alignItems: "center",
-    ...theme.shadow.card,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border
   },
-  welcomeIcon: { fontSize: 56, marginBottom: 16 },
-  welcomeTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: theme.colors.primary,
-    textAlign: "center",
-    lineHeight: 30,
-    marginBottom: 16,
+  greeting: { fontSize: 14, color: theme.colors.textMuted },
+  userEmail: { fontSize: 18, fontWeight: "800", color: theme.colors.primary },
+  list: { padding: theme.spacing.lg },
+  sectionTitle: { 
+    fontSize: 18, 
+    fontWeight: "700", 
+    color: theme.colors.text, 
+    marginBottom: theme.spacing.md 
   },
-  divider: {
-    width: "100%",
-    height: 1,
-    backgroundColor: theme.colors.border,
-    marginVertical: 12,
-  },
-  challengeText: {
-    fontSize: 18,
-    color: theme.colors.textMid,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  emailText: { fontSize: 13, color: theme.colors.textMuted },
-  achievementsCard: {
+  footerContainer: {
+    padding: theme.spacing.lg,
     backgroundColor: theme.colors.card,
-    borderRadius: 16,
-    padding: 20,
-    gap: 8,
-    ...theme.shadow.card,
-  },
-  achievementsTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: theme.colors.primary,
-    marginBottom: 8,
-  },
-  achievement: { fontSize: 14, color: theme.colors.textMid },
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    paddingBottom: 20,
+  }
 });
