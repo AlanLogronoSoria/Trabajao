@@ -1,23 +1,30 @@
-import { theme } from "@/core/styles/theme";
 import { useForgotPassword } from "@/features/auth/model/useForgotPassword";
-import { Button } from "@/shared/ui/Button";
-import { Input } from "@/shared/ui/Input";
+import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-    Alert,
-    KeyboardAvoidingView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Image,
+  ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
- 
+
 export const ForgotPasswordPage = () => {
-  const [email,   setEmail]   = useState("");
+  const [email, setEmail] = useState("");
   const [success, setSuccess] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const forgotPassword = useForgotPassword();
- 
+
+  const isSubmitting = forgotPassword.isPending;
+
   const handleSend = async () => {
     if (!email) {
       Alert.alert("Campo requerido", "Ingresa tu correo electrónico.");
@@ -30,89 +37,281 @@ export const ForgotPasswordPage = () => {
       Alert.alert("Error", err.message);
     }
   };
- 
-  if (success) {
-    return (
-      <View style={styles.successContainer}>
-        <Text style={styles.icon}>📧</Text>
-        <Text style={styles.successTitle}>¡Email enviado!</Text>
-        <Text style={styles.successText}>
-          Revisa tu bandeja de entrada en{" "}
-          <Text style={{ fontWeight:"700" }}>{email}</Text>.
-          {"  "}Haz clic en el link del email para
-          establecer tu nueva contraseña.
-          {"  "}Una vez cambiada, regresa aquí e inicia sesión.
-        </Text>
-        <TouchableOpacity onPress={() => router.replace("/(auth)/login")}>
-          <Text style={styles.link}>← Volver al inicio de sesión</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
- 
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior="height"
+    <ImageBackground
+      source={{ uri: "https://lh3.googleusercontent.com/aida/ADBb0uhlJwjwuuFbnqzuS1FJUIulUZoRuURD-r5Un8AtEn5FXKPKBg8HSS8PCSy7ZJT6v89T45wSiZh0uEajrFhRNLhtdhwScUCUee0eN6YZT5U3oQzLSkPqLS5t0oDCMFhalzthbiqW6hY2OQ-wpVHJ2LITCv9gnkXJaEGK9zEB1bgqDEAyVXlBSu1wf2Tq2WEa7YZ1iCS_gdoziAtVKC95zibIbMpohUnr1tKIy5PLNu_PdUIi5GXMKxsKLXbh" }}
+      style={styles.background}
+      resizeMode="cover"
     >
-      <View style={styles.inner}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backBtn}
+      <View style={styles.overlay} pointerEvents="none" />
+
+      <KeyboardAvoidingView
+        style={styles.container}
+        // SOLUCIÓN 1: En Android DEBE ser undefined. Expo ya maneja el ajuste de pantalla por defecto.
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
         >
-          <Text style={styles.backText}>← Volver</Text>
-        </TouchableOpacity>
- 
-        <View style={styles.card}>
-          <View style={styles.header}>
-            <Text style={styles.logo}>🔑</Text>
-            <Text style={styles.title}>¿Olvidaste tu contraseña?</Text>
-            <Text style={styles.subtitle}>
-              Te enviaremos un email para restablecerla
-            </Text>
+          <View style={styles.inner}>
+            
+            {/* Logo */}
+            <View style={styles.logoContainer}>
+              <Image
+                source={{ uri: "https://lh3.googleusercontent.com/aida/ADBb0uh3v3miyQOezTC6oJ9DBwup7Hq4KkcPClV0HhhtCy0Gu0gLtK3dcM3lgYq0o5wFpkvwY70g-DcQRlQ5oJM5Z5yCB4-G62knRxX2TEKhH3xZvyV4sGz5mLzELp-T7ShFuI5eqYngHMivXorUImmHt--Im_-yVkSwalZvG_78YbjdBJkNsB6gZWxXYSsxy5uwpufBQWCw3qtfuq5pNLGDxm746UswB0BIi10UIkCLHmCws6c7Z8FYdackEzU" }}
+                style={styles.logoImage}
+              />
+            </View>
+
+            {/* Tarjeta Glassmorphism */}
+            <View style={styles.glassCard}>
+              {success ? (
+                /* ESTADO: ÉXITO */
+                <View style={styles.stateContainer}>
+                  <View style={styles.successIconContainer}>
+                    <MaterialIcons name="check-circle" size={40} color="#34d399" />
+                  </View>
+                  <Text style={styles.title}>¡Enlace enviado!</Text>
+                  <Text style={styles.subtitleSuccess}>
+                    Si existe una cuenta, se ha enviado un enlace para restablecer la contraseña a:{"\n"}
+                    <Text style={{ fontWeight: "700", color: "#e0e3e5" }}>{email}</Text>
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.glassButton}
+                    onPress={() => router.replace("/(auth)/login")}
+                  >
+                    <Text style={styles.glassButtonText}>Volver al inicio de sesión</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                /* ESTADO: FORMULARIO POR DEFECTO */
+                <View style={styles.stateContainer}>
+                  <View style={styles.header}>
+                    <Text style={styles.title}>¿Olvidaste tu contraseña?</Text>
+                    <Text style={styles.subtitle}>
+                      Ingresa tu correo institucional para recibir un enlace de restablecimiento.
+                    </Text>
+                  </View>
+
+                  <View style={styles.form}>
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.label}>CORREO ELECTRÓNICO</Text>
+                      <View style={[styles.inputWrapper, isFocused && styles.inputWrapperFocused]}>
+                        <MaterialIcons name="mail" size={20} color="#8d90a2" style={styles.inputIcon} />
+                        <TextInput
+                          style={styles.input}
+                          value={email}
+                          onChangeText={setEmail}
+                          keyboardType="email-address"
+                          placeholder="admin@universidad.edu.ec"
+                          placeholderTextColor="#434656"
+                          autoCapitalize="none"
+                          onFocus={() => setIsFocused(true)}
+                          onBlur={() => setIsFocused(false)}
+                          editable={!isSubmitting}
+                        />
+                      </View>
+                    </View>
+
+                    <TouchableOpacity
+                      style={styles.primaryButton}
+                      onPress={handleSend}
+                      disabled={isSubmitting}
+                      activeOpacity={0.8}
+                    >
+                      {isSubmitting ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <>
+                          <Text style={styles.primaryButtonText}>Enviar enlace</Text>
+                          <MaterialIcons name="arrow-forward" size={18} color="#fff" />
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.footer}>
+                    <TouchableOpacity
+                      style={styles.backLink}
+                      onPress={() => router.back()}
+                    >
+                      <MaterialIcons name="arrow-back" size={16} color="#00dbe9" />
+                      <Text style={styles.backLinkText}>Volver al inicio de sesión</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </View>
           </View>
-          <View style={styles.form}>
-            <Input
-              label="Correo electrónico"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              placeholder="tu@correo.com"
-            />
-            <Button
-              onPress={handleSend}
-              isLoading={forgotPassword.isPending}
-              label="Enviar instrucciones"
-            />
-          </View>
-        </View>
-      </View>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 };
- 
+
 const styles = StyleSheet.create({
-  container:        { flex:1, backgroundColor: theme.colors.bg },
-  inner:            { flex:1, justifyContent:"center", padding:24 },
-  backBtn:          { marginBottom:16 },
-  backText:         { color: theme.colors.accent, fontSize:16 },
-  card:             { backgroundColor: theme.colors.card, borderRadius:20,
-                      overflow:"hidden", ...theme.shadow.card },
-  header:           { backgroundColor: theme.colors.primary, padding:32,
-                      alignItems:"center" },
-  logo:             { fontSize:52, marginBottom:12 },
-  title:            { color:"#fff", fontSize:22, fontWeight:"700",
-                      textAlign:"center", marginBottom:8 },
-  subtitle:         { color:"rgba(255,255,255,0.75)", fontSize:13,
-                      textAlign:"center" },
-  form:             { padding:28, gap:16 },
-  successContainer: { flex:1, backgroundColor: theme.colors.bg,
-                      justifyContent:"center", alignItems:"center", padding:32 },
-  icon:             { fontSize:72, marginBottom:24 },
-  successTitle:     { fontSize:26, fontWeight:"700",
-                      color: theme.colors.primary, marginBottom:16 },
-  successText:      { fontSize:16, color: theme.colors.textMid,
-                      textAlign:"center", lineHeight:24, marginBottom:32 },
-  link:             { color: theme.colors.accent, fontSize:15, fontWeight:"600" },
+  background: {
+    flex: 1,
+    backgroundColor: "#101415",
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(16, 20, 21, 0.6)",
+  },
+  container: {
+    flex: 1,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
+  inner: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
+  logoContainer: {
+    marginBottom: 24,
+    alignItems: "center",
+  },
+  logoImage: {
+    width: 96,
+    height: 96,
+    borderRadius: 16,
+  },
+  glassCard: {
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 24,
+    overflow: "hidden",
+  },
+  stateContainer: {
+    gap: 24,
+  },
+  header: {
+    gap: 8,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "600",
+    color: "#e0e3e5",
+    textAlign: "left",
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#c3c5d9",
+    lineHeight: 24,
+  },
+  form: {
+    gap: 20,
+    marginTop: 8,
+  },
+  inputGroup: {
+    gap: 8,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#c3c5d9",
+    letterSpacing: 0.8,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#272a2c",
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+  },
+  inputWrapperFocused: {
+    // SOLUCIÓN 2: Solo cambiamos el color del borde. 
+    // Quitar elevation y shadow dinámicos aquí previene el bug de pérdida de foco en Android.
+    borderColor: "#00F0FF",
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    height: 48,
+    color: "#e0e3e5",
+    fontSize: 16,
+  },
+  primaryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#0055ff",
+    height: 52,
+    borderRadius: 8,
+    gap: 8,
+    marginTop: 4,
+    shadowColor: "#0055ff",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  primaryButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  footer: {
+    marginTop: 16,
+    alignItems: "center",
+  },
+  backLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    padding: 8,
+  },
+  backLinkText: {
+    color: "#00dbe9",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  successIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "rgba(52, 211, 153, 0.2)",
+    borderColor: "rgba(52, 211, 153, 0.3)",
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    marginBottom: 8,
+  },
+  subtitleSuccess: {
+    fontSize: 16,
+    color: "#c3c5d9",
+    lineHeight: 24,
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  glassButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: "center",
+    alignSelf: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.05)",
+  },
+  glassButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "500",
+  },
 });
- 

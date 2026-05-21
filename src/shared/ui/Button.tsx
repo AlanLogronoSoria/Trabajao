@@ -1,7 +1,7 @@
 import {
-    ActivityIndicator, StyleSheet,
-    Text,
-    TouchableOpacity
+  ActivityIndicator, StyleSheet,
+  Text,
+  TouchableOpacity
 } from "react-native";
  
 interface ButtonProps {
@@ -34,10 +34,10 @@ export const Button = ({
 const styles = StyleSheet.create({
   base:        { borderRadius:12, paddingVertical:14, paddingHorizontal:24,
                  alignItems:"center", justifyContent:"center" },
-  primary:     { backgroundColor:"#1B3A6B" },
+  primary:     { backgroundColor:"#0062ff" },
   ghost:       { backgroundColor:"transparent", borderWidth:2, borderColor:"#1B3A6B" },
   danger:      { backgroundColor:"#DC2626" },
   disabled:    { opacity:0.5 },
   label:       { color:"#fff", fontSize:16, fontWeight:"600" },
-  labelGhost:  { color:"#1B3A6B" },
+  labelGhost:  { color:"#ffffff" },
 });

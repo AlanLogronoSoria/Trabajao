@@ -1,4 +1,3 @@
-import { theme } from "@/core/styles/theme";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,8 +12,8 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { ManagePlaceCard } from "./components/ManagePlaceCard";
 
+// Interfaz de datos
 interface Place {
   id: string;
   name: string;
@@ -92,21 +91,22 @@ export default function HomeScreen({ places, setPlaces, onBack }: HomeScreenProp
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+    <SafeAreaView style={styles.safe}>
+      {/* Header Premium (Glassmorphism) */}
+      <View style={styles.topAppBar}>
+        <TouchableOpacity style={styles.backButton} onPress={onBack}>
+          <Ionicons name="arrow-back" size={20} color="#b6c4ff" />
         </TouchableOpacity>
         <View>
-          <Text style={styles.headerTitle}>Gestión de Lugares</Text>
-          <Text style={styles.headerSub}>{places.length} espacios activos</Text>
+          <Text style={styles.appTitle}>Gestión de Lugares</Text>
+          <Text style={styles.appSubTitle}>{places.length} espacios activos</Text>
         </View>
       </View>
 
       {/* Lista Principal */}
       {places.length === 0 ? (
         <View style={styles.centerBox}>
+          <Ionicons name="folder-open-outline" size={48} color="#323537" style={{ marginBottom: 16 }} />
           <Text style={styles.emptyText}>No hay lugares registrados aún.</Text>
         </View>
       ) : (
@@ -115,22 +115,36 @@ export default function HomeScreen({ places, setPlaces, onBack }: HomeScreenProp
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
-            <ManagePlaceCard 
-              title={item.name} 
-              desc={item.desc} 
-              onEdit={() => openModal(item)}
-              onDelete={() => handleDelete(item.id)}
-            />
+            /* Componente de tarjeta integrado visualmente para asegurar el modo oscuro */
+            <View style={styles.glassCard}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="business-outline" size={20} color="#b6c4ff" />
+              </View>
+              
+              <View style={styles.infoContainer}>
+                <Text style={styles.placeName}>{item.name}</Text>
+                <Text style={styles.placeDesc} numberOfLines={1}>{item.desc}</Text>
+              </View>
+
+              <View style={styles.actionsContainer}>
+                <TouchableOpacity style={styles.editButton} onPress={() => openModal(item)}>
+                  <Ionicons name="pencil" size={16} color="#00eefc" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item.id)}>
+                  <Ionicons name="trash-outline" size={16} color="#ffb4ab" />
+                </TouchableOpacity>
+              </View>
+            </View>
           )}
         />
       )}
 
-      {/* Botón Flotante */}
+      {/* Botón Flotante Modernizado */}
       <TouchableOpacity style={styles.fab} onPress={() => openModal()}>
-        <Ionicons name="add" size={30} color="white" />
+        <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
 
-      {/* Modal Reutilizable */}
+      {/* Modal Reutilizable Adaptado al Tema Oscuro */}
       <Modal animationType="slide" transparent visible={modalVisible}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
@@ -175,58 +189,166 @@ export default function HomeScreen({ places, setPlaces, onBack }: HomeScreenProp
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.bg },
-  centerBox: { flex: 1, justifyContent: "center", alignItems: "center" },
-  emptyText: { color: theme.colors.textMuted, fontSize: 16 },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: theme.spacing.lg,
-    backgroundColor: theme.colors.card,
-    gap: 16,
-    ...theme.shadow.card,
+  // Estructura Base
+  safe: { 
+    flex: 1, 
+    backgroundColor: '#101415' // Fondo ultra oscuro
   },
-  backBtn: {
-    padding: 10,
-    backgroundColor: theme.colors.bg,
-    borderRadius: theme.radius.sm,
+  centerBox: { 
+    flex: 1, 
+    justifyContent: "center", 
+    alignItems: "center" 
   },
-  headerTitle: { fontSize: 22, fontWeight: "800", color: theme.colors.text },
-  headerSub: { fontSize: 13, color: theme.colors.textMuted },
-  listContent: { padding: theme.spacing.lg, paddingBottom: 100 },
+  emptyText: { 
+    color: '#8d90a2', 
+    fontSize: 16 
+  },
+  
+  // Header
+  topAppBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    backgroundColor: 'rgba(29, 32, 34, 0.9)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  backButton: {
+    marginRight: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  appTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#e0e3e5', 
+  },
+  appSubTitle: {
+    fontSize: 13,
+    color: '#c3c5d9',
+    marginTop: 2,
+  },
+  
+  // Lista y Tarjetas Glassmorphism
+  listContent: { 
+    padding: 24, 
+    paddingBottom: 100 
+  },
+  glassCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    marginBottom: 16,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  infoContainer: {
+    flex: 1,
+    marginLeft: 16,
+    marginRight: 8,
+  },
+  placeName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#e0e3e5',
+  },
+  placeDesc: {
+    fontSize: 13,
+    color: '#8d90a2',
+    marginTop: 4,
+  },
+  
+  // Botones dentro de la tarjeta
+  actionsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  editButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0, 238, 252, 0.1)', // Tono cyan
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 238, 252, 0.2)',
+  },
+  deleteButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 180, 171, 0.1)', // Tono rojo
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 180, 171, 0.2)',
+  },
+
+  // Botón Flotante (FAB)
   fab: {
-    position: "absolute",
-    bottom: 30,
-    right: 30,
-    backgroundColor: theme.colors.primary,
-    width: 65,
-    height: 65,
-    borderRadius: 32.5,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 8,
-    shadowColor: theme.colors.primary,
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#0055ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#00F0FF',
     shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
+  fabText: {
+    fontSize: 30,
+    color: '#ffffff',
+    fontWeight: '300',
+    marginTop: -2,
+  },
+
+  // Modal Adaptado al Ecosistema
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.7)", // Oscurecido para mejor contraste
     justifyContent: "flex-end",
   },
   modalCard: {
-    backgroundColor: theme.colors.card,
-    borderTopLeftRadius: theme.radius.xl,
-    borderTopRightRadius: theme.radius.xl,
-    padding: theme.spacing.xl,
-    ...theme.shadow.card,
+    backgroundColor: 'rgba(29, 32, 34, 0.98)', // Adaptado a modo oscuro
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    borderTopWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   modalTitle: {
     fontSize: 24,
     fontWeight: "800",
-    color: theme.colors.text,
+    color: '#e0e3e5',
     marginBottom: 20,
   },
-  modalActions: { flexDirection: "row", justifyContent: "flex-end" },
+  modalActions: { 
+    flexDirection: "row", 
+    justifyContent: "flex-end" 
+  },
 });
